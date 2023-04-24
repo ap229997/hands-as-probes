@@ -255,7 +255,7 @@ class EPICPatchLoader(Dataset):
         # seg_image.save(f"temp3/out_im_{item}.png")
         # seg_mask.save(f"temp3/out_mask_{item}.png")
 
-        return {'img': inp_img_tensor, 'seg_image': seg_img_tensor, "seg_mask": seg_mask_tensor, "valid_mask": validity_mask_tensor}
+        return {'img': inp_img_tensor, 'seg_image': seg_img_tensor, "seg_mask": seg_mask_tensor, "valid_mask": validity_mask_tensor, 'img_path': path}
 
 if __name__ == "__main__":
     config = load_config("../configs/base.yaml")

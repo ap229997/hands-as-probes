@@ -28,7 +28,8 @@ flags.DEFINE_string('out_dir', '/data01/mohit/Track-Hands/output/partitioned_tra
 flags.DEFINE_string('data_dir', "/home/mohit/EPIC-KITCHENS", 'Path to EPIC-KITCHENS frames')
 flags.DEFINE_string('hoa_dir',
                     # "/data01/mohit/Track-Hands/video-object-states/data/epic-kitchens/metadata/detections/hand-objects",
-                    "/data01/smodi9/datasets/EPIC-KITCHENS/detections_partitioned",
+                    # "/data01/smodi9/datasets/EPIC-KITCHENS/detections_partitioned",
+                    "/home/adityap9/projects/hands-as-probes/learning-state-features/datasets/detections_partitioned",
                     'Path to hand-object detections for EPIC dataset')
 flags.DEFINE_float('maxhandscore', 0.8, '')
 flags.DEFINE_integer('fps', 10, '')

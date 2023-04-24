@@ -7,8 +7,8 @@ root = Path(__file__).parent.absolute() / 'datasets'
 # Change me
 paths = {
     'dataset_dirs': {
-        'epic_kitchens_rgb_frames': root / "EPIC-KITCHENS",
-        'epic_kitchens_shan_detections': root / "detections_partitioned",
+        'epic_kitchens_rgb_frames': "/home/mohit/EPIC-KITCHENS", # og: root / "EPIC-KITCHENS",
+        'epic_kitchens_shan_detections': "/data01/mohit/InteractionHotspots/detections/hand-objects", # root / "detections_partitioned",
         'mit_states_dataset': root / "mit_states",
         'tracks': root / "tracks_partitioned",
     }

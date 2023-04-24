@@ -9,7 +9,7 @@ from functools import partial
 
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('in_dir', '/data01/mohit/Track-Hands/output/original_tracks_0.8_128', '')
+flags.DEFINE_string('inp_dir', '/data01/mohit/Track-Hands/output/original_tracks_0.8_128', '')
 
 
 def get_trajectory_length(impath):
@@ -54,11 +54,11 @@ def split_track(outpath, inpath):
 
 def main(_):
 	for split in ["train", "validation"]:
-		hands_path = os.path.join(FLAGS.in_dir, split, "hand")
+		hands_path = os.path.join(FLAGS.inp_dir, split, "hand")
 		jpgFilenamesList = sorted(glob.glob(f"{hands_path}/*.jpg"))
 		print(f"{hands_path}/*.jpg")
 		print(len(jpgFilenamesList))
-		out_path = os.path.join(FLAGS.in_dir + "_split", split, "hand")
+		out_path = os.path.join(FLAGS.inp_dir + "_split", split, "hand")
 		os.makedirs(out_path, exist_ok=True)
 		pool = multiprocessing.Pool(processes=20)
 		func = partial(split_track, out_path)
@@ -66,12 +66,12 @@ def main(_):
 		# pool.map(func, jpgFilenamesList)
 		[l for l in tqdm(pool.imap_unordered(func, jpgFilenamesList), total=len(jpgFilenamesList))]
 
-		os.system(f"cp -r {FLAGS.in_dir}/*.pkl {FLAGS.in_dir}_split/")
+		os.system(f"cp -r {FLAGS.inp_dir}/*.pkl {FLAGS.inp_dir}_split/")
 
 		# Copy meta information to the target folder
-		os.system(f"cp ../annotations/EPIC_55_annotations.csv {FLAGS.in_dir}_split/")
-		os.system(f"cp ../annotations/EPIC_test_s1_object_video_list.csv {FLAGS.in_dir}_split/")
-		os.system(f"cp ../annotations/EPIC_test_s2_object_video_list.csv {FLAGS.in_dir}_split/")
+		os.system(f"cp ../annotations/EPIC_55_annotations.csv {FLAGS.inp_dir}_split/")
+		os.system(f"cp ../annotations/EPIC_test_s1_object_video_list.csv {FLAGS.inp_dir}_split/")
+		os.system(f"cp ../annotations/EPIC_test_s2_object_video_list.csv {FLAGS.inp_dir}_split/")
 
 
 

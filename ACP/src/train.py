@@ -1,4 +1,5 @@
 import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helper import set_numpythreads
 set_numpythreads()
 
@@ -10,7 +11,7 @@ from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader, SubsetRandomSampler
+from torch.utils.data import DataLoader, SubsetRandomSampler, Subset
 
 from utils import set_torch_seed, load_config, Meter, Logger, APMeterBin
 from model import SegmentationNetDeeper, SegmentationNetDeeperBig
@@ -46,6 +47,7 @@ class Experiment:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.batch_size = self.config["data"]["bs"]
         self.rng = np.random.default_rng(0)
+        self.use_preset = self.config['data'].get('use_preset', False)
 
         self.is_sym = self.config['model'].get("is_sym", False)
         if self.is_sym:
@@ -150,6 +152,14 @@ class Experiment:
                 drop_last=False),
         }
 
+        if self.use_preset:
+            with open(self.config['data']['preset_indices_path'], 'r') as f:
+                indices = [int(i) for i in f.readlines()]
+            self.data['train'] = DataLoader(Subset(self.datasets["train"], indices),
+                batch_size=self.batch_size, shuffle=True,
+                num_workers=self.config["data"]["nw"],
+                worker_init_fn=worker_init_fn,
+                drop_last=False)
 
         return
 
@@ -168,6 +178,23 @@ class Experiment:
                                     size=min(num_samples * self.config['data']['bs'], len(self.datasets['train'])),
                                     replace=False,
                                     p=probs)
+
+        ####### sampled 50k images from full dataset, done only once initially #######
+        # indices = self.rng.choice(len(self.datasets['train']),
+        #                         size=50000,
+        #                         replace=False,
+        #                         p=probs)
+        # sampled_img_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_img_paths.txt'
+        # sampled_indices_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices.txt'
+        # for i in indices:
+        #     curr_data = self.datasets['train'][i]
+        #     curr_img_path = curr_data['img_path']
+        #     with open(sampled_img_file, 'a') as f:
+        #         f.write(curr_img_path+'\n')
+        #     with open(sampled_indices_file, 'a') as f:
+        #         f.write(str(i)+'\n')
+        ###################################################
+
         self.data["train"] = DataLoader(
                 self.datasets['train'],
                 batch_size=self.config['data']['bs'], shuffle=False,
@@ -233,13 +260,16 @@ class Experiment:
     def loop(self, split="train", num_batches=None, epoch=0):
         if 'train' in split:
             self.model.train()
-            if num_batches is not None:
+            if num_batches is not None and not self.use_preset: # if preset indices are used then no need to create dataloader every epoch
                 self.create_train_dataloader(num_batches)
         else:
             self.model.eval()
 
         for i, dic in tqdm(enumerate(self.data[split]), total=len(self.data[split])):
-            dic = {key: value.cuda() for key, value in dic.items()}
+            # dic = {key: value.cuda() for key, value in dic.items()}
+            for key, value in dic.items():
+                if isinstance(value, torch.Tensor):
+                    dic[key] = value.cuda()
             with torch.set_grad_enabled('train' in split):
                 loss, preds, masks, img = self.get_loss(dic, split)
                 # backpropagate if training
