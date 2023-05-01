@@ -174,6 +174,11 @@ class EPICPatchLoader(Dataset):
         
         return outs
 
+    # def __getitem__(self, item):
+    #     hand, vid, pid, fname = self.meta_info[item]
+    #     path = f"{self.data_dir}/{pid}/rgb_frames/{vid}/{fname}"
+    #     return {'img_path': path}
+
     def __getitem__(self, item):
 
         outs = None

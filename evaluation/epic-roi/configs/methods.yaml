@@ -2,22 +2,23 @@ dilation_list: [0, 20]
 factor: 5 # Downscaling Factor
 methods:
     # 'MaskRCNN': "/home/mohit/VOS/Detectron/detectron2/demo/EPIC"
-    'MaskRCNN': 
-        path: "./predictions/MaskRCNN/output"
-        blurring: False
-    'deepgaze2': 
-      path: "./predictions/deepgaze2/output"
-      blurring: False
-      eval_with_MaskRCNN: True
-      MaskRCNN_weight: 1
-    'ACP': 
-      path: "./predictions/ACP/output"
-      blurring: True
+    # 'MaskRCNN': 
+    #     path: "./predictions/MaskRCNN/output"
+    #     blurring: False
+    # 'deepgaze2': 
+    #   path: "./predictions/deepgaze2/output"
+    #   blurring: False
+    #   eval_with_MaskRCNN: True
+    #   MaskRCNN_weight: 1
+    # 'ACP': 
+    #   path: "./predictions/ACP/output"
+    #   blurring: True
+    #   bradius: 25 # Blurring Radius
+    #   eval_with_MaskRCNN: True
+    #   MaskRCNN_weight: 2
+    'SegNet':
+      path: /home/adityap9/projects/hands-as-probes/ACP/evals/EPIC-KITCHENS_verify_benchmark/SegNet_hands_og_seed0_350
+      blurring: False # Can be True or False
       bradius: 25 # Blurring Radius
-      eval_with_MaskRCNN: True
-      MaskRCNN_weight: 2
-    # 'Your Method':
-      # path: PATH_TO_PREDICTIONS
-      # blurring: False # Can be True or False
-      # eval_with_MaskRCNN: True # Evaluate after combination with MaskRCNN
-      # MaskRCNN_weight: 1 # The weight for MaskRCNN
+      eval_with_MaskRCNN: False # Evaluate after combination with MaskRCNN
+      MaskRCNN_weight: 1 # The weight for MaskRCNN

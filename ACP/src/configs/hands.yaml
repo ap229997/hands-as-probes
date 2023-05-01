@@ -10,8 +10,9 @@ data:
   hand_img_size: 128
   contact: True # Default True
   EPIC55_only: True
-  data_dir: "/home/mohit/EPIC-KITCHENS"
-  annot_dir: /home/smodi9/epic_kitchens/epic-affordances/ACP/datasets/ACP_metadata
+  data_dir: /home/mohit/EPIC-KITCHENS
+  # annot_dir: /home/adityap9/projects/hands-as-probes/ACP/datasets/ACP_metadata
+  annot_dir: /home/mohit/VOS/epic-affordances/ACP/datasets/ACP_metadata
   # hand_seg_dir: /data02/mohit/VOS/video-hand-grasps/src_segmentation/inferred_masks/epic/SegNetFCNMultiHead_Egohandsfull
 
 training:
@@ -37,7 +38,7 @@ training:
   bbshift: 0. # Default 0.0
   mask_location: bc # Default bc
   use_class_loss: True # Default True
-  hand_ckpt: /home/smodi9/epic_kitchens/epic-affordances/ACP/models/GUN71/GUN71_tsc_seed0_checkpoint_27.pth
+  hand_ckpt: /home/adityap9/projects/hands-as-probes/ACP/models/GUN-71/GUN71_tsc_seed0_checkpoint_27.pth
   bottomkclass: 15 # Default 15
   topkclass: 1 # Default 1
   use_no_hands: False # Always set to False!!!!

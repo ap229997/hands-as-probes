@@ -1,6 +1,8 @@
 from helper import set_numpythreads, str2bool, get_git_root
 set_numpythreads()
 import os, json, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 import cv2
 import torch
 from utils import load_config
@@ -19,7 +21,7 @@ torch.manual_seed(0)
 torch.cuda.manual_seed(0)
 torch.set_num_threads(4)
 
-def get_data_for_image_path(item, GT_item, imsize, transform, mask_location, wsize=None, hand_cond=True):
+def get_data_for_image_path(item, GT_item, imsize, transform, mask_location, wsize=None, hand_cond=True, **kwargs):
 	img = Image.open(item)
 	if hand_cond:
 		GT = Image.open(GT_item)
@@ -47,6 +49,7 @@ def get_data_for_image_path(item, GT_item, imsize, transform, mask_location, wsi
 	else:
 		boxes = generate_bboxes_around_forimg(img.copy(), wsize, wsize, nh=80, nv=50, margin=margin)
 	
+	use_img_input = kwargs.get("use_img_input", False)
 	for i in range(len(boxes)):
 		outs = boxes[i]
 		bbox, bbaround = outs
@@ -62,7 +65,8 @@ def get_data_for_image_path(item, GT_item, imsize, transform, mask_location, wsi
 				continue
 		
 		inp_img = resize_image(crop_image(img, bbaround), imsize, imsize)
-		inp_img = Image.fromarray(np.array(inp_img) * exp_val_mask) # Hide Hand region
+		if not use_img_input:
+			inp_img = Image.fromarray(np.array(inp_img) * exp_val_mask) # Hide Hand region
 
 		inp_img_tensor = transform(inp_img)
 		inp_tenor_list.append(inp_img_tensor)
@@ -77,7 +81,7 @@ def get_data_for_image_path(item, GT_item, imsize, transform, mask_location, wsi
 	
 	return img, bbox_list, vmasks_list, torch.stack(inp_tenor_list, dim=0)
 
-def infer(out_dir, model, mask_location, frames, args):
+def infer(out_dir, model, mask_location, frames, args, **kwargs):
 	# Set batchsize and device
 	bs = 512
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -93,7 +97,7 @@ def infer(out_dir, model, mask_location, frames, args):
 		
 		GT_item = os.path.join(args.GT_dir, os.path.basename(item)[:-3] + "png") if args.hand_cond else None
 
-		img, bb_list, vm_list, inp_ims = get_data_for_image_path(item, GT_item, args.imsize, transform, mask_location, wsize=args.wsize, hand_cond=args.hand_cond)
+		img, bb_list, vm_list, inp_ims = get_data_for_image_path(item, GT_item, args.imsize, transform, mask_location, wsize=args.wsize, hand_cond=args.hand_cond, use_img_input=kwargs.get("use_img_input", False))
 		item_name = os.path.splitext(os.path.basename(item))[0]
 
 		out_list = []
@@ -146,7 +150,7 @@ def main(args):
 	prefix = prefix + f"_{args.wsize}" if args.wsize is not None else prefix 
 	# prefix = prefix + f"_nomask" if not args.mask_input else prefix 
 	if args.ckpt is None:
-		model_path = f"{args.model_dir}/{model_name}_checkpoint.pth"
+		model_path = f"{args.model_dir}/{model_name}_best.pth" # og: 'checkpoint' instead of 'best'
 	else:
 		model_path = f"{args.model_dir}/{model_name}_checkpoint_{args.ckpt}.pth"
 	
@@ -197,7 +201,8 @@ def main(args):
 		print("Error: Use a valid split")
 		sys.exit()
 
-	infer(out_dir, model, mask_location, frames, args)
+	use_img_input = checkpoint['config']['data'].get('use_img_input', False)
+	infer(out_dir, model, mask_location, frames, args, use_img_input=use_img_input)
 
 	
 		

@@ -1,4 +1,6 @@
-import os, sys
+import os, sys, glob
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 from helper import set_numpythreads
 set_numpythreads()
@@ -12,7 +14,7 @@ from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import DataLoader, SubsetRandomSampler
+from torch.utils.data import DataLoader, SubsetRandomSampler, Subset
 
 from utils import set_torch_seed, load_config, Meter, Logger, APMeterBin, create_imagewtext
 from model import SegmentationNetDeeperTwohead, SegmentationNetDeeperTwoheadBig
@@ -48,6 +50,8 @@ class Experiment:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.batch_size = self.config["data"]["bs"]
         self.rng = np.random.default_rng(0)
+        self.use_preset = self.config['data'].get('use_preset', False)
+        self.use_img_input = self.config['data'].get('use_img_input', False)
 
         self.is_sym = self.config['model'].get("is_sym", False)
         if self.is_sym:
@@ -193,6 +197,48 @@ class Experiment:
                 drop_last=False),
         }
 
+        ########### get the correct indices corresponding to the filtered images ###########
+        # new_path = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_img_paths_100k_filtered.txt'
+        # new_path = '/home/adityap9/projects/hands-as-probes/ACP/debug/val_img_paths_filtered.txt'
+        # filtered_paths = open(new_path, 'r').read().split('\n')[:-1]
+        img_dir = '/data11/mc48/renders/mohit/inpaint_4f_best_passthrough'
+        img_paths = sorted(glob.glob(os.path.join(img_dir, '*/*/*/*.png')))
+        img_ids = []
+        for img in img_paths:
+            name = img.split('/')
+            unique_id = name[-2] + '_' + name[-1].split('.')[0]
+            img_ids.append(unique_id)
+        total_len = len(self.datasets['train'])
+        save_dir = '/home/adityap9/projects/hands-as-probes/ACP/debug'
+        for i in range(total_len):
+            if i%100000 == 0:
+                print(i)
+            curr_img_path = self.datasets['train'][i]['img_path']
+            name = curr_img_path.split('/')
+            unique_id = name[-2] + '_' + name[-1].split('.')[0]
+            if unique_id in img_ids:
+                with open(os.path.join(save_dir, 'sampled_indices_100k_hand_filtered.txt'), 'a') as f:
+                    f.write(str(i) + '\n')
+                with open(os.path.join(save_dir, 'sampled_img_paths_100k_hand_filtered.txt'), 'a') as f:
+                    f.write(curr_img_path + '\n')
+        #########################################
+
+        if self.use_preset:
+            with open(self.config['data']['preset_indices_path'], 'r') as f:
+                indices = [int(i) for i in f.readlines()]
+            self.data['train'] = DataLoader(Subset(self.datasets["train"], indices),
+                batch_size=self.batch_size, shuffle=True,
+                num_workers=self.config["data"]["nw"],
+                worker_init_fn=worker_init_fn,
+                drop_last=False)
+            with open(self.config['data']['preset_val_indices_path'], 'r') as f:
+                val_indices = [int(i) for i in f.readlines()]
+            self.data['validation'] = DataLoader(Subset(self.datasets["validation"], val_indices),
+                batch_size=self.batch_size, shuffle=False,
+                num_workers=self.config["data"]["nw"],
+                worker_init_fn=worker_init_fn,
+                pin_memory=True,
+                drop_last=False)
 
         return
 
@@ -323,13 +369,16 @@ class Experiment:
     def loop(self, split="train", num_batches=None, epoch=0):
         if 'train' in split:
             self.model.train()
-            if num_batches is not None:
+            if num_batches is not None and not self.use_preset:
                 self.create_train_dataloader(num_batches)
         else:
             self.model.eval()
 
         for i, dic in tqdm(enumerate(self.data[split]), total=len(self.data[split])):
-            dic = {key: value.cuda() for key, value in dic.items()}
+            # dic = {key: value.cuda() for key, value in dic.items()}
+            for key, value in dic.items():
+                if isinstance(value, torch.Tensor):
+                    dic[key] = value.cuda()
             with torch.set_grad_enabled('train' in split):
                 loss, preds, masks, img, hand, label = self.get_loss(dic, split)
                 # backpropagate if training

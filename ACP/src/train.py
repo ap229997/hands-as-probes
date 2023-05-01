@@ -1,5 +1,6 @@
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from helper import set_numpythreads
 set_numpythreads()
 
@@ -152,6 +153,15 @@ class Experiment:
                 drop_last=False),
         }
 
+        # for debugging something
+        # sampled_img_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/val_img_paths.txt'
+        # total_len = len(self.datasets['validation'])
+        # for i in range(total_len):
+        #     curr_data = self.datasets['validation'][i]
+        #     curr_img_path = curr_data['img_path']
+        #     with open(sampled_img_file, 'a') as f:
+        #         f.write(curr_img_path+'\n')
+
         if self.use_preset:
             with open(self.config['data']['preset_indices_path'], 'r') as f:
                 indices = [int(i) for i in f.readlines()]
@@ -184,8 +194,8 @@ class Experiment:
         #                         size=50000,
         #                         replace=False,
         #                         p=probs)
-        # sampled_img_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_img_paths.txt'
-        # sampled_indices_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices.txt'
+        # sampled_img_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_img_paths_2.txt'
+        # sampled_indices_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices_2.txt'
         # for i in indices:
         #     curr_data = self.datasets['train'][i]
         #     curr_img_path = curr_data['img_path']
