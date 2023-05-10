@@ -201,26 +201,27 @@ class Experiment:
         # new_path = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_img_paths_100k_filtered.txt'
         # new_path = '/home/adityap9/projects/hands-as-probes/ACP/debug/val_img_paths_filtered.txt'
         # filtered_paths = open(new_path, 'r').read().split('\n')[:-1]
-        img_dir = '/data11/mc48/renders/mohit/inpaint_4f_best_passthrough'
-        img_paths = sorted(glob.glob(os.path.join(img_dir, '*/*/*/*.png')))
-        img_ids = []
-        for img in img_paths:
-            name = img.split('/')
-            unique_id = name[-2] + '_' + name[-1].split('.')[0]
-            img_ids.append(unique_id)
-        total_len = len(self.datasets['train'])
-        save_dir = '/home/adityap9/projects/hands-as-probes/ACP/debug'
-        for i in range(total_len):
-            if i%100000 == 0:
-                print(i)
-            curr_img_path = self.datasets['train'][i]['img_path']
-            name = curr_img_path.split('/')
-            unique_id = name[-2] + '_' + name[-1].split('.')[0]
-            if unique_id in img_ids:
-                with open(os.path.join(save_dir, 'sampled_indices_100k_hand_filtered.txt'), 'a') as f:
-                    f.write(str(i) + '\n')
-                with open(os.path.join(save_dir, 'sampled_img_paths_100k_hand_filtered.txt'), 'a') as f:
-                    f.write(curr_img_path + '\n')
+        # img_dir = '/data11/mc48/renders/mohit/inpaint_4f_best_passthrough'
+        # img_paths = sorted(glob.glob(os.path.join(img_dir, '*/*/*/*.png')))
+        # img_ids = []
+        # for img in img_paths:
+        #     name = img.split('/')
+        #     unique_id = name[-2] + '_' + name[-1].split('.')[0]
+        #     img_ids.append(unique_id)
+        # total_len = len(self.datasets['train'])
+        # save_dir = '/home/adityap9/projects/hands-as-probes/ACP/debug'
+        # for i in range(total_len):
+        #     if i%100000 == 0:
+        #         print(i)
+        #     curr_img_path = self.datasets['train'][i]['img_path']
+        #     name = curr_img_path.split('/')
+        #     unique_id = name[-2] + '_' + name[-1].split('.')[0]
+        #     if unique_id in img_ids:
+        #         with open(os.path.join(save_dir, 'sampled_indices_100k_hand_filtered.txt'), 'a') as f:
+        #             f.write(str(i) + '\n')
+        #         with open(os.path.join(save_dir, 'sampled_img_paths_100k_hand_filtered.txt'), 'a') as f:
+        #             f.write(curr_img_path + '\n')
+        # exit()
         #########################################
 
         if self.use_preset:
@@ -257,6 +258,23 @@ class Experiment:
                                     size=min(num_samples * self.config['data']['bs'], len(self.datasets['train'])),
                                     replace=False,
                                     p=probs)
+        
+        ####### sampled 50k images from full dataset, done only once initially #######
+        # indices = self.rng.choice(len(self.datasets['train']),
+        #                         size=50000,
+        #                         replace=False,
+        #                         p=probs)
+        # sampled_img_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_img_paths_50k_more.txt'
+        # sampled_indices_file = '/home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices_50k_more.txt'
+        # for i in indices:
+        #     curr_data = self.datasets['train'][i]
+        #     curr_img_path = curr_data['img_path']
+        #     with open(sampled_img_file, 'a') as f:
+        #         f.write(curr_img_path+'\n')
+        #     with open(sampled_indices_file, 'a') as f:
+        #         f.write(str(i)+'\n')
+        ###################################################
+        
         self.data["train"] = DataLoader(
                 self.datasets['train'],
                 batch_size=self.config['data']['bs'], shuffle=False,
@@ -295,33 +313,38 @@ class Experiment:
         preds = out['pred']
         probs = torch.sigmoid(preds)
 
-        seg_mask_exp = dic['seg_mask']
-        if self.is_sym:
-            vmask = dic['valid_mask']
-            if self.loss_masking:
-                # Use inverted validation mask to mask the loss
-                loss_seg2d = self.criterion(preds, seg_mask_exp)*(1 - vmask)
+        loss_seg = 0
+        if not self.config['training'].get('use_only_grasp', False):
+            seg_mask_exp = dic['seg_mask']
+            if self.is_sym:
+                vmask = dic['valid_mask']
+                if self.loss_masking:
+                    # Use inverted validation mask to mask the loss
+                    loss_seg2d = self.criterion(preds, seg_mask_exp)*(1 - vmask)
+                else:
+                    # Do not mask the loss
+                    loss_seg2d = self.criterion(preds, seg_mask_exp)
             else:
-                # Do not mask the loss
                 loss_seg2d = self.criterion(preds, seg_mask_exp)
-        else:
-            loss_seg2d = self.criterion(preds, seg_mask_exp)
-            
-        loss_seg = loss_seg2d.mean(-1).mean(-1)
-        loss_seg = torch.mean(loss_seg)
+                
+            loss_seg = loss_seg2d.mean(-1).mean(-1)
+            loss_seg = torch.mean(loss_seg)
 
-        predictions = preds.reshape(-1, 1)
-        labels = dic['seg_mask'].reshape(-1, 1)
+            predictions = preds.reshape(-1, 1)
+            labels = dic['seg_mask'].reshape(-1, 1)
 
-        acc = torch.mean(((torch.sigmoid(predictions) > 0.5)*1.0 == labels)*1.0)
-        self.acc_meter[split].update(acc)
-        self.mAP_meter[split].add(predictions.detach().cpu().numpy(), labels.detach().cpu().numpy())
+            acc = torch.mean(((torch.sigmoid(predictions) > 0.5)*1.0 == labels)*1.0)
+            self.acc_meter[split].update(acc)
+            self.mAP_meter[split].add(predictions.detach().cpu().numpy(), labels.detach().cpu().numpy())
+
+            if self.config['training'].get('use_no_hands', False):
+                return loss_seg, probs, dic['seg_mask'], dic['seg_image'], None, None
 
         hand_indices = dic['hand_sampled'] == 1
         hemb_pred = out['hand_emb'][hand_indices]
 
         # Init Hand Loss
-        hand_loss = 0
+        hand_loss = torch.Tensor([0]).to(self.device) # default: 0
 
         if len(hemb_pred) > 0:
             with torch.no_grad():

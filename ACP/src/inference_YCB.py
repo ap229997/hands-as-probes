@@ -19,7 +19,7 @@ torch.manual_seed(0)
 torch.cuda.manual_seed(0)
 torch.set_num_threads(4)
 
-def get_data_for_image_path(item, imsize, transform, mask_location, wsize=None):
+def get_data_for_image_path(item, imsize, transform, mask_location, wsize=None, **kwargs):
 	img = Image.open(item)
 
 	bbox_list = []
@@ -42,6 +42,7 @@ def get_data_for_image_path(item, imsize, transform, mask_location, wsize=None):
 	else:
 		boxes = generate_bboxes_around_forimg(img.copy(), wsize, wsize, nh=40, nv=40, margin=margin)
 	
+	use_img_input = kwargs.get("use_img_input", False)
 	for i in range(len(boxes)):
 		outs = boxes[i]
 		bbox, bbaround = outs
@@ -51,7 +52,8 @@ def get_data_for_image_path(item, imsize, transform, mask_location, wsize=None):
 			bbaround = bbaround.shift(shiftv=-bbox.height/2.)
 		
 		inp_img = resize_image(crop_image(img, bbaround), imsize, imsize)
-		inp_img = Image.fromarray(np.array(inp_img) * exp_val_mask) # Hide Hand region
+		if not use_img_input:
+			inp_img = Image.fromarray(np.array(inp_img) * exp_val_mask) # Hide Hand region
 
 		inp_img_tensor = transform(inp_img)
 		inp_tenor_list.append(inp_img_tensor)
@@ -61,7 +63,7 @@ def get_data_for_image_path(item, imsize, transform, mask_location, wsize=None):
 	return img, bbox_list, vmasks_list, torch.stack(inp_tenor_list, dim=0)
 
 @torch.no_grad() # Make the function no grad
-def infer(out_dir, model, n_classes, classes, mask_location, args):
+def infer(out_dir, model, n_classes, classes, mask_location, args, **kwargs):
 	# Set batchsize and device
 	bs = 512
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -74,7 +76,7 @@ def infer(out_dir, model, n_classes, classes, mask_location, args):
 	images = sorted(glob.glob(f"{args.inp_dir}/{args.split}/*.jpg"))
 
 	for item in tqdm(images):
-		img, bb_list, vm_list, inp_ims = get_data_for_image_path(item, args.imsize, transform, mask_location, wsize=args.wsize)
+		img, bb_list, vm_list, inp_ims = get_data_for_image_path(item, args.imsize, transform, mask_location, wsize=args.wsize, use_img_input=kwargs.get("use_img_input", False))
 		item_name = os.path.splitext(os.path.basename(item))[0]
 
 		hand_pred = []
@@ -115,7 +117,7 @@ def main(args):
 	prefix = prefix + f"_{args.wsize}" if args.wsize is not None else prefix 
 	# prefix = prefix + f"_nomask" if not args.mask_input else prefix 
 	if args.ckpt is None:
-		model_path = f"{args.model_dir}/{model_name}_checkpoint.pth"
+		model_path = f"{args.model_dir}/{model_name}_best.pth" # og: 'checkpoint' instead of 'best'
 	else:
 		model_path = f"{args.model_dir}/{model_name}_checkpoint_{args.ckpt}.pth"
 	
@@ -150,7 +152,8 @@ def main(args):
 	model.load_state_dict(checkpoint["model_state_dict"])
 	model.eval() # Set in eval mode
 
-	infer(out_dir, model, n_classes, grasp_info["easy_classes"]["classes"], mask_location, args)
+	use_img_input = checkpoint['config']['data'].get('use_img_input', False)
+	infer(out_dir, model, n_classes, grasp_info["easy_classes"]["classes"], mask_location, args, use_img_input=use_img_input)
 
 	
 		

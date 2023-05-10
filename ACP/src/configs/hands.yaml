@@ -18,7 +18,7 @@ data:
 training:
   lr: 0.0001
   decay: 0.0001
-  num_epochs: 400
+  num_epochs: 400 # Default 400
   num_batches: 256
   save_after: 5 # num_valsteps
   replace: False

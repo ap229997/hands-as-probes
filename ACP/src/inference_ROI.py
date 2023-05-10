@@ -123,6 +123,7 @@ def infer(out_dir, model, mask_location, frames, args, **kwargs):
 		npimg = np.array(img)
 
 		if args.vis:
+			probs = torch.cat(probs, dim=0)
 			npprobs = probs.numpy()
 			for ind in range(len(npprobs)):
 				os.system(f"mkdir -p {out_dir}/{item_name}")

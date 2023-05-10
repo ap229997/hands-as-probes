@@ -4,22 +4,22 @@ model:
   is_sym: False # If the encoder and decoder are symmetric
 
 data:
-  bs: 4
-  nw: 0
+  bs: 64
+  nw: 8
   imsize: 128
   hand_img_size: 128
   contact: True # Default True
   EPIC55_only: True
   data_dir: /home/mohit/EPIC-KITCHENS
-  filtered_dir: /data11/mc48/renders/mohit/inpaint_4f_passthrough_nested
+  filtered_dir: /data11/mc48/renders/mohit/inpaint_4f_best_passthrough # inpaint_4f_passthrough_nested, inpaint_4f_best_passthrough
   # annot_dir: /home/mohit/VOS/epic-affordances/training/scripts/generate_metadata
   # annot_dir: /home/mohit/VOS/epic-affordances/training/scripts/generate_metadata/nosup
   annot_dir: /home/adityap9/projects/hands-as-probes/ACP/datasets/ACP_metadata
   hand_seg_dir: /data02/mohit/VOS/video-hand-grasps/src_segmentation/inferred_masks/epic/SegNetFCNMultiHead_Egohandsfull
   use_preset: True
-  preset_indices_path: /home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices_100k_hand_filtered.txt
+  preset_indices_path: /home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices_5k_hand_filtered.txt # sampled_indices_100k_hand_filtered.txt
   preset_val_indices_path: /home/adityap9/projects/hands-as-probes/ACP/debug/sampled_val_indices_hand_filtered.txt
-  # use_img_input: True
+  use_img_input: True
 
 training:
   lr: 0.0001
@@ -47,6 +47,7 @@ training:
   hand_ckpt: /home/adityap9/projects/hands-as-probes/ACP/models/GUN-71/GUN71_tsc_seed0_checkpoint_27.pth
   bottomkclass: 15 # Default 15
   topkclass: 1 # Default 1
-  use_no_hands: False # Default False
+  use_no_hands: True # Default False
   use_hand_segmask: False # Default False
   # loss_masking: True # Only applicable when is_sym set to true
+  use_only_grasp: True # Default False
