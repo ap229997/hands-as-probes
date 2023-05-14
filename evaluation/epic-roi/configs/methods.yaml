@@ -17,7 +17,7 @@ methods:
     #   eval_with_MaskRCNN: True
     #   MaskRCNN_weight: 2
     'SegNet':
-      path: /home/adityap9/projects/hands-as-probes/ACP/evals/EPIC-KITCHENS_benchmark/SegNet_hands_50k_filtered_img_only_seed0_400
+      path: /home/adityap9/projects/hands-as-probes/ACP/evals/EPIC-KITCHENS_benchmark/SegNet_roi_hands_50k_filtered_img_only_seed100_seed100
       blurring: False # Can be True or False
       bradius: 25 # Blurring Radius
       eval_with_MaskRCNN: False # Evaluate after combination with MaskRCNN

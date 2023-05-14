@@ -3,4 +3,4 @@ methods:
   # DO NOT USE "random" IN THE KEY
   # random_baseline: None
   # 'Your Method': PATH_TO_PREDICTIONS
-  'SegNet': /home/adityap9/projects/hands-as-probes/ACP/evals/GAO_benchmark_benchmark/SegNet_hands_5k_filtered_seed5_seed5_400_80
+  'SegNet': /home/adityap9/projects/hands-as-probes/ACP/evals/GAO_benchmark/SegNet_gao_hands_50k_filtered_img_only_seed100_seed100_80

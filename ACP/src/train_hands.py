@@ -344,7 +344,7 @@ class Experiment:
         hemb_pred = out['hand_emb'][hand_indices]
 
         # Init Hand Loss
-        hand_loss = torch.Tensor([0]).to(self.device) # default: 0
+        hand_loss = torch.tensor(0., requires_grad=True).to(self.device) # default: 0
 
         if len(hemb_pred) > 0:
             with torch.no_grad():
