@@ -17,7 +17,7 @@ data:
   annot_dir: /home/adityap9/projects/hands-as-probes/ACP/datasets/ACP_metadata
   hand_seg_dir: /data02/mohit/VOS/video-hand-grasps/src_segmentation/inferred_masks/epic/SegNetFCNMultiHead_Egohandsfull
   use_preset: True
-  preset_indices_path: /home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices_5k_hand_filtered.txt # sampled_indices_100k_hand_filtered.txt
+  preset_indices_path: /home/adityap9/projects/hands-as-probes/ACP/debug/sampled_indices_1k_hand_filtered.txt # sampled_indices_100k_hand_filtered.txt
   preset_val_indices_path: /home/adityap9/projects/hands-as-probes/ACP/debug/sampled_val_indices_hand_filtered.txt
   use_img_input: True
 
@@ -50,4 +50,4 @@ training:
   use_no_hands: True # Default False
   use_hand_segmask: False # Default False
   # loss_masking: True # Only applicable when is_sym set to true
-  use_only_grasp: True # Default False
+  use_only_grasp: False # Default False

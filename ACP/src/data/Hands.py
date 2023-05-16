@@ -52,7 +52,7 @@ class EPICPatchLoaderwHands(EPICPatchLoader):
         ])
 
         self.use_img_input = config['data'].get('use_img_input', False)
-        if self.use_img_input and self.split == "train":
+        if self.use_img_input:# and self.split == "train":
             self.data_dir = config['data'].get('filtered_dir', None)
         self.use_preset = config['data'].get('use_preset', False)
 
@@ -106,7 +106,7 @@ class EPICPatchLoaderwHands(EPICPatchLoader):
         l_hand_img = r_hand_img = None
         while outs is None:
             hand, vid, pid, fname = self.meta_info[item]
-            if self.use_img_input and self.split == "train":
+            if self.use_img_input:# and self.split == "train":
                 fname = fname.split(".")[0] + ".png"
             path = f"{self.data_dir}/{pid}/rgb_frames/{vid}/{fname}"
             orig_img = img = Image.open(path)
