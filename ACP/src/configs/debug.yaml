@@ -50,4 +50,4 @@ training:
   use_no_hands: True # Default False
   use_hand_segmask: False # Default False
   # loss_masking: True # Only applicable when is_sym set to true
-  use_only_grasp: False # Default False
+  use_only_grasp: True # Default False

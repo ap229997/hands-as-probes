@@ -1,4 +1,7 @@
 import os, sys, glob
+from re import T
+
+from yaml import parse
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
@@ -146,10 +149,10 @@ class Experiment:
             assert not self.is_sym
             from data.Hands_seg import EPICPatchLoaderSegwHands, worker_init_fn
             self.datasets = {
-                "train": EPICPatchLoaderSegwHands(self.config,
-                                        split="train",
-                                        transform=True,
-                                    ),
+                # "train": EPICPatchLoaderSegwHands(self.config,
+                #                         split="train",
+                #                         transform=True,
+                #                     ),
                 "validation": EPICPatchLoaderSegwHands(self.config,
                                         split="validation",
                                         transform=False, length=10000,
@@ -159,10 +162,10 @@ class Experiment:
             self.logger.info("Using symmetric dataloader for training")
             from data.Hands_inpoutmatch import EPICPatchLoaderInpOutMatchwHands, worker_init_fn
             self.datasets = {
-                "train": EPICPatchLoaderInpOutMatchwHands(self.config,
-                                        split="train",
-                                        transform=True,
-                                    ),
+                # "train": EPICPatchLoaderInpOutMatchwHands(self.config,
+                #                         split="train",
+                #                         transform=True,
+                #                     ),
                 "validation": EPICPatchLoaderInpOutMatchwHands(self.config,
                                         split="validation",
                                         transform=False, length=10000,
@@ -171,10 +174,10 @@ class Experiment:
         else:
             from data.Hands import EPICPatchLoaderwHands, worker_init_fn
             self.datasets = {
-                "train": EPICPatchLoaderwHands(self.config,
-                                        split="train",
-                                        transform=True,
-                                    ),
+                # "train": EPICPatchLoaderwHands(self.config,
+                #                         split="train",
+                #                         transform=True,
+                #                     ),
                 "validation": EPICPatchLoaderwHands(self.config,
                                         split="validation",
                                         transform=False, length=10000,
@@ -183,12 +186,12 @@ class Experiment:
         
         # set up dataloaders
         self.data = {
-            "train": DataLoader(self.datasets["train"],
-                batch_size=self.batch_size, shuffle=True,
-                num_workers=self.config["data"]["nw"],
-                worker_init_fn=worker_init_fn,
-                pin_memory=True,
-                drop_last=False),
+            # "train": DataLoader(self.datasets["train"],
+            #     batch_size=self.batch_size, shuffle=True,
+            #     num_workers=self.config["data"]["nw"],
+            #     worker_init_fn=worker_init_fn,
+            #     pin_memory=True,
+            #     drop_last=False),
             "validation": DataLoader(self.datasets["validation"],
                 batch_size=self.batch_size, shuffle=False,
                 num_workers=self.config["data"]["nw"],
@@ -225,15 +228,16 @@ class Experiment:
         #########################################
 
         if self.use_preset:
-            with open(self.config['data']['preset_indices_path'], 'r') as f:
-                indices = [int(i) for i in f.readlines()]
-            self.data['train'] = DataLoader(Subset(self.datasets["train"], indices),
-                batch_size=self.batch_size, shuffle=True,
-                num_workers=self.config["data"]["nw"],
-                worker_init_fn=worker_init_fn,
-                drop_last=False)
+            # with open(self.config['data']['preset_indices_path'], 'r') as f:
+            #     indices = [int(i) for i in f.readlines()]
+            # self.data['train'] = DataLoader(Subset(self.datasets["train"], indices),
+            #     batch_size=self.batch_size, shuffle=True,
+            #     num_workers=self.config["data"]["nw"],
+            #     worker_init_fn=worker_init_fn,
+            #     drop_last=False)
             with open(self.config['data']['preset_val_indices_path'], 'r') as f:
                 val_indices = [int(i) for i in f.readlines()]
+            # val_indices = [0,1,2,3,4,5,6,7] # for debugging
             self.data['validation'] = DataLoader(Subset(self.datasets["validation"], val_indices),
                 batch_size=self.batch_size, shuffle=False,
                 num_workers=self.config["data"]["nw"],
@@ -296,11 +300,11 @@ class Experiment:
             'train_loss': self.loss_meter["train"].avg_list,
             'config': self.config
         }
-        torch.save(save_dict, os.path.join(self.model_dir, f"{self.name}_checkpoint.pth"))
+        # torch.save(save_dict, os.path.join(self.model_dir, f"{self.name}_checkpoint.pth"))
 
-        if self.config["training"].get("save_after", None) is not None:
-            if (epoch + 1) % self.config["training"]["save_after"] == 0: # (self.config["training"].get("save_after", None) * self.config["training"]["ckpt_interval"]) == 0:
-                torch.save(save_dict, os.path.join(self.model_dir, f"{self.name}_checkpoint_{epoch + 1}.pth"))                
+        # if self.config["training"].get("save_after", None) is not None:
+        #     if (epoch + 1) % (self.config["training"].get("save_after", None) * self.config["training"]["ckpt_interval"]) == 0:
+        #         torch.save(save_dict, os.path.join(self.model_dir, f"{self.name}_checkpoint_{epoch + 1}.pth"))                
 
         if best:
             torch.save(save_dict, os.path.join(self.model_dir, f"{self.name}_best.pth"))
@@ -409,65 +413,57 @@ class Experiment:
                     self.optimizer.zero_grad()
                     loss.backward()
                     self.optimizer.step()
-                if i == 0:
-                    self.train_writer.add_images(f'{split}_gtimg', img, epoch)
-                    self.train_writer.add_images(f'{split}_preds', preds, epoch)
-                    self.train_writer.add_images(f'{split}_masks', masks, epoch)
-                    if hand is not None:
-                        labelled_hands = torch.stack([torch.cat([i, self.cluster_images[j]], dim=2) for i, j in zip(hand.cpu(), label)])
-                    else:
-                        labelled_hands = torch.stack(self.cluster_images)
-                    self.train_writer.add_images(f'{split}_labelledhands', labelled_hands, epoch)
+                # if i == 0:
+                #     self.train_writer.add_images(f'{split}_gtimg', img, epoch)
+                #     self.train_writer.add_images(f'{split}_preds', preds, epoch)
+                #     self.train_writer.add_images(f'{split}_masks', masks, epoch)
+                #     if hand is not None:
+                #         labelled_hands = torch.stack([torch.cat([i, self.cluster_images[j]], dim=2) for i, j in zip(hand.cpu(), label)])
+                #     else:
+                #         labelled_hands = torch.stack(self.cluster_images)
+                #     self.train_writer.add_images(f'{split}_labelledhands', labelled_hands, epoch)
             self.loss_meter[split].update(loss.item())
 
-    def run(self):
-        for e in range(self.start_epoch, self.start_epoch + self.config["training"]["num_epochs"]):
-
-            # run training loop
-            self.loop("train", self.config["training"]["num_batches"], epoch=e)
+    def run(self, ckpt_dir):
+        ckpts = sorted(os.listdir(ckpt_dir))
+        for ckpt in ckpts:
+            if 'best' in ckpt or 'checkpoint' in ckpt.split('_')[-1]:
+                continue
+            e = int(ckpt.split('_')[-1].split('.')[0])
             
-            # log interval
-            if (e + 1) % self.config["training"]["log_interval"] == 0:
-                train_loss = self.loss_meter["train"].average()
-                train_acc = self.acc_meter["train"].average()
-                train_hand_loss = self.ac_loss_meter["train"].average()
-                train_seg_mAP = self.mAP_meter["train"].value_random(20)
-                
-                self.scheduler.step(train_loss)
-                self.train_writer.add_scalar('training_loss', train_loss, e)
-                self.train_writer.add_scalar('training_acc', train_acc, e)
-                self.train_writer.add_scalar('training_hand_loss', train_hand_loss, e)
-
-                self.logger.info(f'Epoch: {e+1}; Train Loss: {train_loss:.3f}; Train Acc: {train_acc:.3f} Train seg AP {train_seg_mAP:.3f} Train hand Loss: {train_hand_loss:.3f}')
-                self.logger.info(f'Counts {self.rescale_counts}')
-            self.loss_meter["train"].reset()
-            self.acc_meter["train"].reset()
-            self.mAP_meter["train"].reset()
-            self.ac_loss_meter["train"].reset()
+            ckpt = os.path.join(ckpt_dir, ckpt)
+            checkpoint = torch.load(ckpt)
+            self.model.load_state_dict(checkpoint["model_state_dict"])
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+            # self.loss_meter["validation"].lowest = checkpoint["best_loss"]
+            # self.loss_meter["train"].avg_list = checkpoint["train_loss"]
+            # self.loss_meter["validation"].avg_list = checkpoint["validation_loss"]
+            self.config = checkpoint["config"]
+            self.start_epoch = checkpoint["epoch"] + 1
+            self.logger.info("loaded model from {}".format(ckpt))
             
-            # checkpoint interval
-            if (e + 1) % self.config["training"]["ckpt_interval"] == 0:
-                self.loop("validation", epoch=e)
-                val_loss = self.loss_meter["validation"].average()
-                val_acc = self.acc_meter["validation"].average()
-                val_hand_loss = self.ac_loss_meter["validation"].average()
-                val_seg_mAP = self.mAP_meter["validation"].value_random(20)
-                
-                self.train_writer.add_scalar('validation_loss', val_loss, e)
-                self.train_writer.add_scalar('validation_acc', val_acc, e)
-                self.train_writer.add_scalar('validation_hand_loss', val_hand_loss)
-                
-                self.save(e, self.loss_meter["validation"].check(highest=False) == -1)
-                
-                self.logger.info(f'Epoch: {e+1}; Val Loss: {val_loss:.3f}; Val Acc: {val_acc:.3f} Val Seg AP: {val_seg_mAP:.3f} Val Hand Loss: {val_hand_loss:.3f}')
-                
-                self.loss_meter["validation"].reset()
-                self.acc_meter["validation"].reset()
-                self.mAP_meter["validation"].reset()
-                self.ac_loss_meter["validation"].reset()
+            self.loop("validation", epoch=e)
+            val_loss = self.loss_meter["validation"].average()
+            val_acc = self.acc_meter["validation"].average()
+            val_hand_loss = self.ac_loss_meter["validation"].average()
+            val_seg_mAP = self.mAP_meter["validation"].value_random(20)
+            
+            # self.train_writer.add_scalar('validation_loss', val_loss, e)
+            # self.train_writer.add_scalar('validation_acc', val_acc, e)
+            # self.train_writer.add_scalar('validation_hand_loss', val_hand_loss)
+            
+            self.save(e, self.loss_meter["validation"].check(highest=False) == -1)
+            
+            self.logger.info(f'Epoch: {e}; Val Loss: {val_loss:.3f}; Val Acc: {val_acc:.3f} Val Seg AP: {val_seg_mAP:.3f} Val Hand Loss: {val_hand_loss:.3f}')
+            
+            self.loss_meter["validation"].reset()
+            self.acc_meter["validation"].reset()
+            self.mAP_meter["validation"].reset()
+            self.ac_loss_meter["validation"].reset()
 
         # save checkpoint at the end of training
-        self.save(e, False)
+        # self.save(e, False)
 
         self.masterlogger.close()
 
@@ -489,6 +485,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', dest='seed', type=int,
                         default=0)
     parser.add_argument('--shuffle', dest='shuffle', action='store_true', default=False)
+    parser.add_argument('--ckpt_dir', dest='ckpt_dir', type=str, default=None, required=True)
     
 
     args = parser.parse_args()
@@ -503,4 +500,4 @@ if __name__ == "__main__":
     experiment = Experiment(args.config, args.model, args.log, args.name)
     if args.shuffle:
         experiment.rng = np.random.default_rng(args.seed)
-    experiment.run()
+    experiment.run(args.ckpt_dir)
